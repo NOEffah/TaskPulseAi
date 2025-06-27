@@ -28,8 +28,8 @@ export const useCreateWorkspace = () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 
     },
-    onError: (error) => {
-      toast.error(`Error creating workspace: ${error.message}`);
+    onError: () => {
+      toast.error(`Error creating workspace`);
     },
   });
 

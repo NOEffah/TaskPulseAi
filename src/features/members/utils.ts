@@ -7,7 +7,7 @@ interface GetMemberProps {
     userId: string;  
 }  
 export const getMember = async ({
-     databases,
+    databases,
     workspaceId, 
     userId
 }: GetMemberProps) => {

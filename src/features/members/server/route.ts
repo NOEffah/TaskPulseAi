@@ -70,29 +70,33 @@ const app = new Hono()
     "/:memberId",
     sessionMiddleware,
     async (c) => {
-        const { memberId} = c.req.param();
+        const { memberId } = c.req.param();
         const  user  = c.get("user");
         const databases = c.get("databases");
 
         const memberToDelete = await databases.getDocument(
-            DATABASE_ID,
-            MEMBERS_ID,
-            memberId,
+          DATABASE_ID,
+          MEMBERS_ID,
+          memberId,
         );
-
+        
+        if (!memberToDelete?.workspaceid) {
+          return c.json({ error: "Invalid member: workspaceid is missing" }, 400);
+        }
+        
         const allMembersInWorkspace = await databases.listDocuments(
-            DATABASE_ID,
-            MEMBERS_ID,
-            [
-                Query.equal("workspaceId", memberToDelete.workspaceId)
-            ]
-        );
-
+          DATABASE_ID,
+          MEMBERS_ID,
+          [
+            Query.equal("workspaceid", memberToDelete.workspaceid)
+          ]
+        )
         const member = await getMember({
             databases,
-            workspaceId: memberToDelete.workspaceId,
+            workspaceId: memberToDelete.workspaceid,
             userId: user.$id
         })
+
 
         if(!member){
             return c.json({
@@ -133,23 +137,59 @@ const app = new Hono()
   }),
   sessionMiddleware,
   async (c) => {
-    const databases = c.get("databases");
-    const user = c.get("user");
-    const { memberId } = c.req.param();
-    const { role } = c.req.valid("json");
+        const { memberId } = c.req.param();
+        const  user  = c.get("user");
+        const databases = c.get("databases");
+        const { role } =c.req.valid("json")
 
-    // (Optional) Add authorization logic if needed
+        const memberToUpdate = await databases.getDocument(
+            DATABASE_ID,
+            MEMBERS_ID,
+            memberId,
+        );
 
-    const updated = await databases.updateDocument(
-      DATABASE_ID,
-      MEMBERS_ID,
-      memberId,
-      {
-        role,
-      }
-    );
 
-    return c.json({ data: updated });
+        const allMembersInWorkspace = await databases.listDocuments(
+            DATABASE_ID,
+            MEMBERS_ID,
+            [
+                Query.equal("workspaceid", memberToUpdate.workspaceid)
+            ]
+        );
+
+        const member = await getMember({
+            databases,
+            workspaceId: memberToUpdate.workspaceid,
+            userId: user.$id
+        })
+
+        if(!member){
+            return c.json({
+                error: "Unathorized"
+            },401)
+        }
+        
+        if (member.id  !== MemberRole.ADMIN){
+            return c.json({
+                error: "Unathorized"
+            },401)
+        }
+
+        if (allMembersInWorkspace.total === 1){
+            return c.json({
+                error: "Cannot downgrade the only member"
+            },401)
+        }
+
+        await databases.updateDocument(
+            DATABASE_ID,
+            MEMBERS_ID,
+            memberId,{
+              role,
+            }
+        )
+
+        return c.json({ data: { $id: memberToUpdate.$id }})
   }
 );
 
