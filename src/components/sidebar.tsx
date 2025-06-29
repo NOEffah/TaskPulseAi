@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Separator } from "./ui/separator";
 import { Navigation } from "./navigation";
 import { WorkspaceSwitcher } from "./workspace-switcher";
+import  Projects  from "@/components/projects"
 
 export const Sidebar = () => {
     return (
@@ -14,6 +15,8 @@ export const Sidebar = () => {
         <WorkspaceSwitcher />
         <Separator />
         <Navigation />
+        
+        <Projects  />
         </aside>  
     );
 }
