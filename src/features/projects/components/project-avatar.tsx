@@ -4,21 +4,23 @@ import Image from "next/image"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-interface WorkspaceAvatarProps {
+interface ProjectAvatarProps {
     image?: string;
     name: string;
     className?: string;
+    fallbackClassName?: string;
 };
 
-export const WorkspaceAvatar = ({
+export const ProjectAvatar = ({
     image,
     name,
-    className
-}: WorkspaceAvatarProps) => {
+    className,
+    fallbackClassName,
+}: ProjectAvatarProps) => {
     if (image) {
         return (
             <div className={ cn(
-                "size-10 relative rounded-md overflow-hidden",
+                "size-7 relative rounded-md overflow-hidden",
                 className,
             )}>
                 <Image src={image} alt={name} fill className="object-cover"/>
@@ -26,8 +28,8 @@ export const WorkspaceAvatar = ({
         )
     }
     return(
-        <Avatar className={cn("size-10 rounded-md", className)}>
-        <AvatarFallback className="text-white bg-orange-600 font-semibold text-lg uppercase rounded-md">
+        <Avatar className={cn("size-7 rounded-md", className)}>
+        <AvatarFallback className={cn("text-white bg-orange-600 font-semibold text-sm uppercase rounded-md",fallbackClassName)}>
             {name[0]}
         </AvatarFallback>
         </Avatar>

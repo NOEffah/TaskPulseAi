@@ -9,8 +9,11 @@ import { DATABASE_ID,
 import { Workspace } from "./types";
 import { createSessionClient } from "@/lib/appwrite";
 
+
+
+
+
 export const getWorkspaces = async () => {
-    try {
         const { databases, account } = await createSessionClient();
         const user = await account.get();
         const members = await databases.listDocuments(
@@ -37,11 +40,7 @@ export const getWorkspaces = async () => {
     );
     return workspaces;
 
-    } catch (error) {   
-        console.error("Error fetching current user:", error);
-        return  {documents: [], total: 0} ;
-    }
-}
+} 
 
 interface GetWorkspaceProps {
     workspaceId: string;
@@ -49,7 +48,6 @@ interface GetWorkspaceProps {
 
 
 export const getWorkspace = async ({ workspaceId }: GetWorkspaceProps) => {
-    try {
         const { databases, account } = await createSessionClient();
         const user = await account.get();
 
@@ -61,7 +59,7 @@ export const getWorkspace = async ({ workspaceId }: GetWorkspaceProps) => {
         });
 
         if (!member) {
-            return null;
+            throw new Error("Unathorized");
         }
         
     
@@ -72,10 +70,7 @@ export const getWorkspace = async ({ workspaceId }: GetWorkspaceProps) => {
     );
     return workspace;
 
-    } catch (error) {   
-        console.error("Error fetching current user:", error);
-        return  null;
-    }
+
 }
 
 interface GetWorkspaceInfoProps{
@@ -84,7 +79,6 @@ interface GetWorkspaceInfoProps{
 
 
 export const getWorkspaceInfo = async ({ workspaceId }: GetWorkspaceInfoProps) => {
-    try {
         const { databases } = await createSessionClient();
 
         
@@ -98,8 +92,5 @@ export const getWorkspaceInfo = async ({ workspaceId }: GetWorkspaceInfoProps) =
         name: workspace.name,
     };
 
-    } catch (error) {   
-        console.error("Error fetching current user:", error);
-        return  null;
-    }
+
 }
