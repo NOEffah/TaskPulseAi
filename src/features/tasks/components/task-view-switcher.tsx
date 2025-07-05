@@ -1,15 +1,78 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+
+
+ } from "@/components/ui/tabs"
+import { PlusIcon } from "lucide-react"
+import { useCreateTaskModal } from "../hooks/use-create-task-modal"
+
 export const TaskViewSwitcher = () => {
+  const { open } = useCreateTaskModal()
+
   return(
-    <div className="flex items-center justify-between p-4 bg-white border-b">
-      <h2 className="text-lg font-semibold">Task View</h2>
-      <div className="flex space-x-2">
-        <button className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300">
-          List View
-        </button>
-        <button className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300">
-          Kanban View
-        </button>
+    <Tabs className="flex-1 w-full border rounded-lg">
+      <div className="h full flex flex-col overflow-auto p-4 ">
+      <div className="flex flex-col gap-y-2 lg:flex-row justify-between items-center">
+        <TabsList className="w-full lg:w-auto">
+          <TabsTrigger
+          className="h-8 w-full lg:w-auto"
+          value="table"
+          >
+            Table
+          </TabsTrigger>
+
+          <TabsTrigger
+          className="h-8 w-full lg:w-auto"
+          value="kanban"
+          >
+            Kanban
+          </TabsTrigger>
+
+          <TabsTrigger
+          className="h-8 w-full lg:w-auto"
+          value="calendar"
+          >
+            Calendar
+          </TabsTrigger>
+
+        </TabsList>
+
+        <Button
+        onClick={open}
+        size="sm"
+        className="w-full lg:w-auto"
+        >
+          <PlusIcon className="size-4 mr-2"/>
+          New
+        </Button>        
       </div>
-    </div>
+      <Separator className="my-4" />
+        Data Filters
+        <Separator className="my-4" />
+      <>
+        <TabsContent
+        value="table"
+        className="mt-0">
+          Data table
+        </TabsContent>
+        <TabsContent
+        value="kanban"
+        className="mt-0">
+          Data kanban
+        </TabsContent>
+        <TabsContent
+        value="calendar"
+        className="mt-0">
+          Data calendar
+        </TabsContent>
+        </>
+      </div>
+    </Tabs>
   )
 }
