@@ -3,7 +3,7 @@
 import { ResponsiveModal } from "@/components/responsive-model";
 
 import { useCreateTaskModal } from "../hooks/use-create-task-modal";
-import { CreateTaskFormWrapper } from "./create-task-model-wrapper";
+import { CreateTaskFormWrapper } from "./create-task-form-wrapper";
 
 export const CreateTaskModal = () => {
     const { isOpen, setIsOpen, close } = useCreateTaskModal()

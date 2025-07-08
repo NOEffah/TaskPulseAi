@@ -1,3 +1,5 @@
+import { Models } from "node-appwrite";
+
 export enum TaskStatus {  
     BACKLOG = "BACKLOG",  
     TODO= "TODO",  
@@ -12,3 +14,16 @@ export enum TaskPriority {
     HIGH = "HIGH",  
     URGENT = "URGENT"  
 };
+
+export type Task = Models.Document & {  
+    name: string;  
+    status: TaskStatus;  
+    workspaceId: string;
+    assigneeId: string;  
+    projectId: string;  
+    position: number;  
+    dueDate: string;  
+    priority: TaskPriority;  
+}  
+
+

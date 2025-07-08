@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 
-import { useCreateTask } from "../api/use-create-task";
 import { DatePicker } from "@/components/date-picker";
 import {
   Select,
@@ -34,36 +33,48 @@ import { TaskPriority, TaskStatus } from "../types";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Controller } from "react-hook-form";
 import { Sparkles } from "lucide-react"; // for AI icon
+import { Task } from "../types";
+import { useUpdateTask } from "../api/use-update-task";
 
-
-interface CreateTaskFormProps {
+interface EditTaskFormProps {
   onCancel?: () => void;
   projectOptions: { id: string, name: string, imageUrl: string }[];
   memberOptions: { id: string, name: string, }[];  
-
+  initialValues: Task,
 }
 
 
-export const CreateTaskForm = ({ onCancel, projectOptions, memberOptions }: CreateTaskFormProps) => {
+export const EditTaskForm = ({ onCancel, projectOptions, memberOptions,initialValues }: EditTaskFormProps) => {
   const workspaceId = useWorkspaceId();
-  const { mutate, isPending } = useCreateTask();
+  const { mutate, isPending } = useUpdateTask();
+
+  const schemaWithoutWorkspaceId = createTaskSchema.omit({ workspaceId: true, description: true });
   
 
-  const form = useForm<z.infer<typeof createTaskSchema>>({
-    resolver: zodResolver(createTaskSchema),
+  const form = useForm<z.infer<typeof schemaWithoutWorkspaceId>>({
+    resolver: zodResolver(schemaWithoutWorkspaceId),
     defaultValues: {
-      workspaceId,
+      ...initialValues,
+      dueDate: initialValues.dueDate ? new Date(initialValues.dueDate) : undefined,
     },
   });
 
-  const onSubmit = (values: z.infer<typeof createTaskSchema>) => {
-    mutate(
-      { json: {...values, workspaceId } },
+  const onSubmit = (values: z.infer<typeof schemaWithoutWorkspaceId>) => {
+    console.log("Clicked")
+    if (!workspaceId) return;
+    mutate({
+      json: {
+        ...values,
+        workspaceId, 
+        },
+        param: {
+          taskId: initialValues.$id,
+        },
+},
       {
         onSuccess: () => {
           form.reset();
           onCancel?.();
-          
         },
       }
     );
@@ -88,7 +99,7 @@ const handlePredictDeadline = () => {
   return (
     <Card className="w-full h-full border-none shadow-none">
       <CardHeader className="flex p-7">
-        <CardTitle className="text-xl font-bold">Create a new task</CardTitle>
+        <CardTitle className="text-xl font-bold">Edit a task</CardTitle>
       </CardHeader>
 
       <div className="px-7">
@@ -98,8 +109,6 @@ const handlePredictDeadline = () => {
       <CardContent className="p-7">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            
-
             <div className="flex flex-col gap-y-4">
               <FormField
                 control={form.control}
@@ -140,9 +149,6 @@ const handlePredictDeadline = () => {
                 </FormItem>
                 )}
               />
-
-
-
               <FormField
                 control={form.control}
                 name="assigneeId"
@@ -182,8 +188,6 @@ const handlePredictDeadline = () => {
                   </FormItem>
                 )}
               />
-
-
               <FormField
                 control={form.control}
                 name="status"
@@ -325,7 +329,7 @@ const handlePredictDeadline = () => {
                 Cancel
               </Button>
               <Button type="submit" size="lg" disabled={isPending}>
-                Create Task
+                Save Changes
               </Button>
             </div>
             
