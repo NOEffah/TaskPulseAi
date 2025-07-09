@@ -22,3 +22,13 @@ export const getTasksQuerySchema = z.object({
   dueDate: z.string().nullish(),
   priority: z.nativeEnum(TaskPriority).nullish(),
 });
+
+export const updateTasksSchema = z.object({
+  tasks: z.array(
+    z.object({
+      $id: z.string(),
+      status: z.nativeEnum(TaskStatus),
+      position: z.number().int().positive().min(1000).max(100000),
+    })
+  ),
+});

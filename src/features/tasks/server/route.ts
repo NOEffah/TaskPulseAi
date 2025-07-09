@@ -1,7 +1,7 @@
 import { sessionMiddleware } from '@/lib/session-middleware';
 import { Hono } from 'hono';
 import { validator } from 'hono/validator';
-import { createTaskSchema } from '../schemas';
+import { createTaskSchema, updateTasksSchema } from '../schemas';
 import { getMember } from '@/features/members/utils';
 import { DATABASE_ID, MEMBERS_ID, PROJECTS_ID, TASKS_ID } from '@/config';
 import { Query } from 'node-appwrite';
@@ -349,5 +349,59 @@ const app = new Hono()
     }
 
 )
+.post(
+    "/bulk-update",
+    sessionMiddleware,
+    validator("json", (value, c) => {
+    const result = updateTasksSchema.safeParse(value);
+    if (!result.success) {
+      return c.json({ errors: result.error.flatten() }, 400);
+    }
+    return result.data;
+  }),
+    async (c) => {
+        const databases = c.get("databases");
+        const user = c.get("user");
+        const { tasks } = await c.req.valid("json");
 
+        const taskToUpdate = await databases.listDocuments(
+            DATABASE_ID,
+            TASKS_ID,
+            [Query.contains("$id", tasks.map((tasks) => tasks.$id))]
+        );
+
+        const workspaceIds = new Set(taskToUpdate.documents.map(task => task.workspaceId));
+        if (workspaceIds.size !== 1){
+            return c.json({ error: "All tasks must belong to same worskshop "})
+        }
+
+        const workspaceId = workspaceIds.values().next().value;
+
+        const member = await getMember({
+            databases,
+            workspaceId,
+            userId: user.$id,
+
+        })
+
+        if(!member) {
+            return c.json({ error: "Unatgorized"}, 401)
+        }
+
+        const updatedTasks = await Promise.all(
+            tasks.map(async (task) => {
+                const { $id, status, position } = task;
+                return databases.updateDocument<Task>(
+                    DATABASE_ID,
+                    TASKS_ID,
+                    $id,
+                    { status, position }
+                )
+            })
+        );
+
+        return c.json({ data: updatedTasks })
+
+    }
+)
 export default app;

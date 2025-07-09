@@ -5,35 +5,33 @@ import { client } from "@/lib/rpc";
 import { useQueryClient } from "@tanstack/react-query";	
 
 
-type ResponseType = InferResponseType<typeof client.api.tasks[":taskId"]["$delete"], 201>;
-type RequestType = InferRequestType<typeof client.api.tasks[":taskId"]["$delete"]>
+type ResponseType = InferResponseType<typeof client.api.tasks["bulk-update"]["$post"], 201>;
+type RequestType = InferRequestType<typeof client.api.tasks["bulk-update"]["$post"]>;
 
-export const useDeleteTask = () => {
+export const useBulkUpdateTask = () => {
   const queryClient = useQueryClient();
-
 
   const mutation = useMutation<
   ResponseType, 
   Error, 
   RequestType
   >({
-    mutationFn: async ({ param }) => {
-      const response = await client.api.tasks[":taskId"]["$delete"]({ param })
+    mutationFn: async ({ json }) => {
+      const response = await client.api.tasks["bulk-update"]["$post"]({ json });
 
       if(!response.ok) {
-        throw new Error(`Deleting task failed`);
+        throw new Error(`Updating tasks failed`);
       }
       return await response.json();
     },
-    onSuccess: ({ data }) => {
-      toast.success("Task deleted ✅");
-
+    onSuccess: () => {
+      toast.success("Tasks updated ✅");
 
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["task", data.$id] });
+
     },
     onError: () => {
-      toast.error(`Error deleting task`);
+      toast.error(`Error updating tasks`);
     },
   });
 
