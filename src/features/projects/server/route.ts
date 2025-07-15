@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { validator } from "hono/validator";
 import { querySchema, updateProjectSchema } from "../schemas";
 import { getMember } from "@/features/members/utils";
-import { DATABASE_ID, PROJECTS_ID, IMAGES_BUCKET_ID } from "@/config";
+import { DATABASE_ID, PROJECTS_ID, IMAGES_BUCKET_ID, TASKS_ID } from "@/config";
 import { ID, Query } from 'node-appwrite';
 import { createProjectSchema } from "../schemas";
 import { Project } from "../types";
@@ -167,43 +167,48 @@ const app = new Hono()
     return c.json({  data: project  });
   }
 )
-.delete(
-  "/:projectId",
-  sessionMiddleware,
-  async (c) => {
-    const databases = c.get("databases");
-    const user = c.get("user");
+.delete("/:projectId", sessionMiddleware, async (c) => {
+  const databases = c.get("databases");
+  const user = c.get("user");
+  const { projectId } = c.req.param();
 
-    const { projectId } = c.req.param();
+  const existingProject = await databases.getDocument<Project>(
+    DATABASE_ID,
+    PROJECTS_ID,
+    projectId
+  );
 
-    const existingProject = await databases.getDocument<Project>(
-      DATABASE_ID,
-      PROJECTS_ID,
-      projectId
-    )
-    
+  const member = await getMember({
+    databases,
+    workspaceId: existingProject.workspaceid,
+    userId: user.$id,
+  });
 
-    const member = await getMember({
-      databases,
-      workspaceId: existingProject.workspaceid,
-      userId: user.$id,
-    })
-
-    if(!member ){
-      return c.json({ error: "Unathorized"}, 401);
-    }
-
-    // TODO : Delete members, projects and tasks
-
-    await databases.deleteDocument(
-      DATABASE_ID,
-      PROJECTS_ID,
-      projectId,
-    );
-
-    return c.json({ data: { $id: existingProject }})
+  if (!member) {
+    return c.json({ error: "Unauthorized" }, 401);
   }
-)
+
+  // ✅ Step 1: Delete related tasks (only real relationship)
+  const tasks = await databases.listDocuments(
+    DATABASE_ID,
+    TASKS_ID,
+    [Query.equal("projectId", projectId)]
+  );
+
+  if (tasks.documents.length) {
+    await Promise.all(
+      tasks.documents.map((task) =>
+        databases.deleteDocument(DATABASE_ID, TASKS_ID, task.$id)
+      )
+    );
+  }
+
+  // ✅ Step 2: Delete the project
+  await databases.deleteDocument(DATABASE_ID, PROJECTS_ID, projectId);
+
+  return c.json({ data: { $id: projectId } });
+});
+
 
 
 

@@ -52,7 +52,7 @@ const ProjectIdPage = async ({
                 </Button>
             </div>
         </div>
-        <TaskViewSwitcher />
+        <TaskViewSwitcher hideProjectFilter projectId={initialValues.$id} />
     </div>
   )
 }

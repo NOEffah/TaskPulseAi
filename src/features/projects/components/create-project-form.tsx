@@ -23,6 +23,11 @@ import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Bot } from "lucide-react";
 
 interface CreateProjectFormProps {
   onCancel?: () => void;
@@ -36,6 +41,8 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
   const { mutate, isPending } = useCreateProject();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const [aiTaskGen, setAiTaskGen] = useState(false);
+  const [taskGenPrompt, setTaskGenPrompt] = useState("");
 
   const form = useForm<z.infer<typeof schemaWithoutWorkspaceId>>({
     resolver: zodResolver(schemaWithoutWorkspaceId),
@@ -46,21 +53,39 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof schemaWithoutWorkspaceId>) => {
-    const finalValues = {
-        ...values,
-        image: values.image instanceof File ? values.image : undefined,
-        workspaceId: workspaceId, 
+  const finalValues = {
+    ...values,
+    image: values.image instanceof File ? values.image : undefined,
+    workspaceId: workspaceId,
   };
-    mutate(
-      { form: finalValues },
-      {
-        onSuccess: ({ data }) => {
-          form.reset();
-          router.push(`/workspaces/${workspaceId}/projects/${data.$id}`);
-        },
-      }
-    );
-  };
+
+  mutate(
+    { form: finalValues },
+    {
+      onSuccess: async ({ data }) => {
+        form.reset();
+
+        // ✅ Send prompt to AI if enabled
+        if (aiTaskGen && taskGenPrompt.trim()) {
+            try {
+              await fetch("/api/ai/generate-tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  projectId: data.$id,
+                  prompt: taskGenPrompt,
+                }),
+              });
+            } catch (error) {
+              console.error("AI task generation failed", error);
+            }
+          }
+        router.push(`/workspaces/${workspaceId}/projects/${data.$id}`);
+      },
+    }
+  );
+};
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,6 +93,10 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
       form.setValue("image", file);
     }
   };
+
+
+
+  
 
   return (
     <Card className="w-full h-full border-none shadow-none">
@@ -174,8 +203,38 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                 )}
               />
             </div>
+            {/* AI Task Generator */}
+            <div className="border rounded-md mt-6">
+              <div className="flex items-center gap-3 py-2 px-3">
+                <Bot className="text-muted-foreground flex-shrink-0" />
+                <div className="space-y-0.5 me-auto">
+                  <Label htmlFor="ai_generate" className="block text-sm">
+                    AI Task Generator
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically create tasks by providing a simple prompt.
+                  </p>
+                </div>
+                <Switch
+                  id="ai_generate"
+                  checked={aiTaskGen}
+                  onCheckedChange={setAiTaskGen}
+                />
+              </div>
 
-            <Separator className="py-7" />
+              {aiTaskGen && (
+                <Textarea
+                  autoFocus
+                  placeholder="Tell me about your project. What you want to accomplish?"
+                  className="border-none"
+                  value={taskGenPrompt}
+                  onChange={(e) => setTaskGenPrompt(e.currentTarget.value)}
+                />
+              )}
+            </div>
+
+
+            <Separator className="py-1" />
             <div className="flex items-center justify-between">
               <Button
                 type="button"
