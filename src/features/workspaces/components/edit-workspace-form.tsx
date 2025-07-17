@@ -133,9 +133,11 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
     const handleCopyInviteLink = () => {
         navigator.clipboard.writeText(fullInviteLink).then(() => toast.success("Invite link copied"))
     }
+    console.log("Initial Values", initialValues);
     
 
     return(
+        
         <div className="flex flex-col gap-y-4">
             <DeleteDialog />
             <ResetDialog/>

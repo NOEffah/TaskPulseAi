@@ -14,6 +14,8 @@ import { useJoinWorkspace } from "../api/use-join-workspace";
 import { useInviteCode } from "../hooks/use-invite-code";
 import { useWorkspaceId } from "../hooks/use-workspace-id";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 interface JoinWorkspaceFormProps{
     initialValues: {
@@ -27,17 +29,19 @@ export const JoinWorkspaceForm = ({
     const { mutate, isPending } = useJoinWorkspace();
     const workspaceId = useWorkspaceId()
     const router = useRouter();
+    const [speciality, setSpeciality] = useState("");
+
 
     const onSubmit = () => {
         mutate({
-            param: { workspaceId },
-            json: { code: inviteCode},
-        },{
-            onSuccess: ({ data }) => {
-
-                router.push(`/workspaces/${data.$id}`)
-            },
+        param: { workspaceId },
+        json: { code: inviteCode, speciality },
+        }, {
+        onSuccess: ({ data }) => {
+            router.push(`/workspaces/${data.$id}`);
+        },
         });
+
     };
 
     return(
@@ -53,6 +57,15 @@ export const JoinWorkspaceForm = ({
             <div className="px-7">
                 <Separator />
             </div>
+            <Input
+                type="text"
+                placeholder="Enter your speciality"
+                className="mb-4"
+                value={speciality}
+                onChange={(e) => setSpeciality(e.target.value)}
+                required
+                />
+
             <CardContent className="P-7">
                 <div className="flex flex-col lg:flex-row items-center gap-2-y justify-between">
                     <Button 

@@ -8,6 +8,7 @@ import { ID, Query } from 'node-appwrite';
 import { createProjectSchema } from "../schemas";
 import { Project } from "../types";
 
+
 const app = new Hono()
 .get(
   "/",
@@ -22,6 +23,7 @@ const app = new Hono()
   async (c) => {
     const user = c.get("user");
     const databases = c.get("databases");
+    
 
     const { workspaceId } = c.req.valid("query");
 
@@ -65,13 +67,15 @@ const app = new Hono()
             const storage = c.get("storage");
             const user = c.get("user");
 
-            const { name, image, workspaceId } = c.req.valid("form");
+            const { name, image, workspaceId, members } = c.req.valid("form");
+
 
             const member = await getMember({
                 databases,
                 workspaceId,
                 userId: user.$id
             });
+         
 
             if(!member){
                 return c.json({ error: "Unthorized"}, 401);
@@ -97,7 +101,8 @@ const app = new Hono()
                 {
                     name,
                     imageUrl: uploadedImageUrl,
-                    workspaceid: workspaceId
+                    workspaceid: workspaceId,
+                    members,
                 }
 
             );

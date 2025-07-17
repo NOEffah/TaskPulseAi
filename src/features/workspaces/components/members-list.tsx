@@ -94,6 +94,10 @@ export const MembersList = () => {
                             <div className="flex flex-col">
                             <p className="text-sm font-medium">{member.name}</p>
                             <p className="text-xs text-muted-foreground">{member.email}</p>
+                            <span className="text-muted-foreground italic text-xs">
+                                {member.speciality}
+                            </span>
+                            
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

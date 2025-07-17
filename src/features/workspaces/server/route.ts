@@ -54,7 +54,8 @@ const app = new Hono()
             const storage = c.get("storage");
             const user = c.get("user");
 
-            const { name, image } = c.req.valid("form");
+            const { name, image, speciality } = c.req.valid("form");
+
 
             let uploadedImageUrl: string | undefined = undefined;
 
@@ -89,6 +90,7 @@ const app = new Hono()
                     userid: user.$id,
                     workspaceid: workspace.$id,
                     role: MemberRole.ADMIN,
+                    speciality,
 
                 }
 
@@ -112,7 +114,8 @@ const app = new Hono()
     const user = c.get("user");
     const { workspaceId } = c.req.param();
 
-    const { name, image } = c.req.valid("form");
+    const { name, image, speciality } = c.req.valid("form");
+
 
     const member = await getMember({
       databases,
@@ -146,6 +149,14 @@ const app = new Hono()
       {
         name,
         imageUrl: uploadedImageUrl,
+      }
+    );
+    await databases.updateDocument(
+      DATABASE_ID,
+      MEMBERS_ID,
+      member.$id,
+      {
+        speciality,
       }
     );
 
@@ -227,7 +238,7 @@ const app = new Hono()
   sessionMiddleware,
   async (c) => {
     const { workspaceId } = c.req.param();
-    const { code } = c.req.valid("json");
+    const { code, speciality } = c.req.valid("json");
     const databases = c.get("databases");
     const user = c.get("user");
 
@@ -263,6 +274,7 @@ const app = new Hono()
         workspaceid: workspaceId,
         userid: user.$id,
         role: MemberRole.MEMBER,
+        speciality,
       }
     );
 

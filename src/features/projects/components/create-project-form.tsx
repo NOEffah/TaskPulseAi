@@ -28,6 +28,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Member } from "@/features/members/types"; // or the correct path to your member type
+
 
 interface CreateProjectFormProps {
   onCancel?: () => void;
@@ -43,6 +46,8 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
   const router = useRouter();
   const [aiTaskGen, setAiTaskGen] = useState(false);
   const [taskGenPrompt, setTaskGenPrompt] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+
 
   const form = useForm<z.infer<typeof schemaWithoutWorkspaceId>>({
     resolver: zodResolver(schemaWithoutWorkspaceId),
@@ -52,11 +57,24 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
     },
   });
 
+    // Fetch workspace members
+  const { data: members } = useQuery<Member[]>({
+  queryKey: ["workspace-members", workspaceId],
+  queryFn: async () => {
+    const res = await fetch(`/api/members?workspaceId=${workspaceId}`);
+    const json = await res.json();
+    return json.data.documents; // ✅ <-- nested under data.documents
+  },
+});
+
+
+
   const onSubmit = (values: z.infer<typeof schemaWithoutWorkspaceId>) => {
   const finalValues = {
     ...values,
     image: values.image instanceof File ? values.image : undefined,
     workspaceId: workspaceId,
+    members: selectedMembers,
   };
 
   mutate(
@@ -93,6 +111,8 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
       form.setValue("image", file);
     }
   };
+  console.log("Fetched members:", members);
+
 
 
 
@@ -202,7 +222,32 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                   </div>
                 )}
               />
+
             </div>
+
+            <div>
+            <FormLabel>Project Members</FormLabel>
+            <div className="flex flex-wrap gap-2">
+              {members?.map((member: Member) => (
+                <Button
+                  key={member.$id}
+                  type="button"
+                  variant={selectedMembers.includes(member.$id) ? "primary" : "outline"}
+
+                  onClick={() =>
+                    setSelectedMembers((prev) =>
+                      prev.includes(member.$id)
+                        ? prev.filter((id) => id !== member.$id)
+                        : [...prev, member.$id]
+                    )
+                  }
+                >
+                  {member.name}
+                </Button>
+              ))}
+            </div>
+            </div>
+
             {/* AI Task Generator */}
             <div className="border rounded-md mt-6">
               <div className="flex items-center gap-3 py-2 px-3">

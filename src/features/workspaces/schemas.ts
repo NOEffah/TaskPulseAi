@@ -7,6 +7,7 @@ export const createWorkspaceSchema = z.object({
         z.instanceof(File),
         z.string().transform((value) => value === "" ? undefined : value),
     ]).optional(),
+    speciality: z.string().min(1, "Speciality is required"),
 });
 
 export const updateWorkspaceSchema = z.object({
@@ -15,10 +16,12 @@ export const updateWorkspaceSchema = z.object({
         z.instanceof(File),
         z.string().transform((value) => value === "" ? undefined : value),
     ]).optional(),
+     speciality: z.string().min(1, "Speciality is required"),
 });
 
 export const joinWorkspaceSchema = z.object({
   code: z.string(),
+  speciality: z.string().min(1, "Speciality is required"),
 });
 
 export const roleSchema = z.object({

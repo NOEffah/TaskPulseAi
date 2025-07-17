@@ -188,7 +188,7 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
                             {field.value ? (
                              <Button
                              type="button"
-                             disabled={isPending}
+                             disabled={isPending || isDeleteProject}
                              variant="destructive"
                              size="xs"
                              className="w-fit mt-2"

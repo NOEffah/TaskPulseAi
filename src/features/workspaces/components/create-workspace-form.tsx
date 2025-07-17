@@ -40,6 +40,7 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProps) =>{
         resolver: zodResolver(createWorkspaceSchema),
         defaultValues: {
             name: '',
+            speciality: '',
         },
     });
 
@@ -174,6 +175,24 @@ export const CreateWorkspaceForm = ({ onCancel }: CreateWorkspaceFormProps) =>{
                 </div>
             )}
             />
+            <FormField  
+                control={form.control}
+                name="speciality" 
+                render={({ field }) => (  
+                    <FormItem>
+                    <FormLabel>Your Speciality</FormLabel>
+                    <FormControl>
+                        <Input 
+                        {...field}
+                        placeholder="e.g. Frontend Developer"
+                        />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                /> 
+
+
 
             </div>
             <Separator className="py-7" />
