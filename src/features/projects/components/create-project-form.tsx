@@ -1,6 +1,8 @@
+// src/features/projects/components/create-project-form.tsx
+
 "use client";
 import { z } from "zod";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { createProjectSchema } from "../schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,14 +25,14 @@ import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Member } from "@/features/members/types"; // or the correct path to your member type
-
+import { Member } from "@/features/members/types"; // Import the correct Member type
+// Removed the old generateTasksWithAI import, now using the hook:
+import { useGenerateTasksAI } from "@/features/ai/api/use-create-ai-generated-tasks";
 
 interface CreateProjectFormProps {
   onCancel?: () => void;
@@ -41,12 +43,15 @@ const schemaWithoutWorkspaceId = createProjectSchema.omit({ workspaceId: true })
 
 export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
   const workspaceId = useWorkspaceId();
+  // Hook for creating the project
   const { mutate, isPending } = useCreateProject();
+  // Hook for generating AI tasks
+  const { mutate: generateTasks, isPending: isGeneratingTasks } = useGenerateTasksAI();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [aiTaskGen, setAiTaskGen] = useState(false);
   const [taskGenPrompt, setTaskGenPrompt] = useState("");
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
 
   const form = useForm<z.infer<typeof schemaWithoutWorkspaceId>>({
@@ -57,53 +62,81 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
     },
   });
 
-    // Fetch workspace members
-  const { data: members } = useQuery<Member[]>({
-  queryKey: ["workspace-members", workspaceId],
-  queryFn: async () => {
-    const res = await fetch(`/api/members?workspaceId=${workspaceId}`);
-    const json = await res.json();
-    return json.data.documents; // ✅ <-- nested under data.documents
-  },
-});
-
+  // Fetch workspace members
+  const { data: members, isLoading: isLoadingMembers } = useQuery<Member[]>({
+    queryKey: ["workspace-members", workspaceId],
+    queryFn: async () => {
+      if (!workspaceId) return []; // Ensure workspaceId exists
+      const res = await fetch(`/api/members?workspaceId=${workspaceId}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch workspace members");
+      }
+      const json = await res.json();
+      return json.data.documents; // ✅ <-- nested under data.documents
+    },
+    enabled: !!workspaceId, // Only run query if workspaceId is available
+  });
 
 
   const onSubmit = (values: z.infer<typeof schemaWithoutWorkspaceId>) => {
-  const finalValues = {
-    ...values,
-    image: values.image instanceof File ? values.image : undefined,
-    workspaceId: workspaceId,
-    members: selectedMembers,
-  };
+    // Filter the full 'members' array to get the selected ones
+    const membersForProject = members?.filter(member =>
+      selectedMemberIds.includes(member.$id)
+    ) || [];
 
-  mutate(
-    { form: finalValues },
-    {
-      onSuccess: async ({ data }) => {
-        form.reset();
+    const finalValues = {
+      ...values,
+      image: values.image instanceof File ? values.image : undefined,
+      workspaceId: workspaceId,
+      members: membersForProject.map(m => m.$id), // Only pass IDs to createProject, as your schema expects string[]
+    };
 
-        // ✅ Send prompt to AI if enabled
-        if (aiTaskGen && taskGenPrompt.trim()) {
-            try {
-              await fetch("/api/ai/generate-tasks", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  projectId: data.$id,
-                  prompt: taskGenPrompt,
-                }),
-              });
-            } catch (error) {
-              console.error("AI task generation failed", error);
-            }
+    mutate(
+      { form: finalValues },
+      {
+        onSuccess: async ({ data: createdProject }) => { // Rename data to createdProject for clarity
+          form.reset();
+
+          // ✅ Send prompt to AI if enabled
+          if (aiTaskGen && taskGenPrompt.trim()) {
+            // 🔥 Build the members array with id, name + speciality for AI
+            const enrichedMembersForAI = membersForProject.map((member) => ({
+              id: member.$id, // Include ID here for potential backend use
+              name: member.name,
+              speciality: member.speciality,
+            }));
+
+            // --- START CHANGE ---
+            // Call the useGenerateTasksAI mutation
+            generateTasks({
+              json: { // Pass the payload as 'json' as required by the mutationFn
+                projectId: createdProject.$id,
+                prompt: taskGenPrompt,
+                members: enrichedMembersForAI,
+              },
+            }, {
+              onSuccess: () => {
+                // Navigate after AI tasks are successfully generated
+                router.push(`/workspaces/${workspaceId}/projects/${createdProject.$id}`);
+              },
+              onError: (error) => {
+                // Handle AI generation error (e.g., show a toast, but still navigate)
+                console.error("AI Task Generation Error:", error);
+                // Still navigate even if AI generation failed to allow manual task creation
+                router.push(`/workspaces/${workspaceId}/projects/${createdProject.$id}`);
+              }
+            });
+            // --- END CHANGE ---
+
+          } else {
+            // If AI task generation is not enabled, just navigate
+            router.push(`/workspaces/${workspaceId}/projects/${createdProject.$id}`);
           }
-        router.push(`/workspaces/${workspaceId}/projects/${data.$id}`);
-      },
-    }
-  );
-};
-
+        },
+        // onError for useCreateProject is handled by the hook's default, but can be overridden here
+      }
+    );
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,12 +144,9 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
       form.setValue("image", file);
     }
   };
-  console.log("Fetched members:", members);
 
-
-
-
-  
+  // Combine loading states for the submit button
+  const isSubmitting = isPending || isGeneratingTasks;
 
   return (
     <Card className="w-full h-full border-none shadow-none">
@@ -131,7 +161,6 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
       <CardContent className="p-7">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            
 
             <div className="flex flex-col gap-y-4">
               <FormField
@@ -187,12 +216,12 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                           accept=".jpeg, .png, .svg, .jpg"
                           ref={inputRef}
                           onChange={handleImageChange}
-                          disabled={isPending}
+                          disabled={isSubmitting}
                         />
                         {field.value ? (
                           <Button
                             type="button"
-                            disabled={isPending}
+                            disabled={isSubmitting}
                             variant="destructive"
                             size="xs"
                             className="w-fit mt-2"
@@ -208,7 +237,7 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                         ) : (
                           <Button
                             type="button"
-                            disabled={isPending}
+                            disabled={isSubmitting}
                             variant="teritary"
                             size="xs"
                             className="w-fit mt-2"
@@ -226,26 +255,31 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
             </div>
 
             <div>
-            <FormLabel>Project Members</FormLabel>
-            <div className="flex flex-wrap gap-2">
-              {members?.map((member: Member) => (
-                <Button
-                  key={member.$id}
-                  type="button"
-                  variant={selectedMembers.includes(member.$id) ? "primary" : "outline"}
-
-                  onClick={() =>
-                    setSelectedMembers((prev) =>
-                      prev.includes(member.$id)
-                        ? prev.filter((id) => id !== member.$id)
-                        : [...prev, member.$id]
-                    )
-                  }
-                >
-                  {member.name}
-                </Button>
-              ))}
-            </div>
+              <FormLabel>Project Members</FormLabel>
+              {isLoadingMembers && <p>Loading members...</p>}
+              {!isLoadingMembers && members && members.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {members.map((member: Member) => (
+                    <Button
+                      key={member.$id}
+                      type="button"
+                      variant={selectedMemberIds.includes(member.$id) ? "primary" : "outline"}
+                      onClick={() =>
+                        setSelectedMemberIds((prev) =>
+                          prev.includes(member.$id)
+                            ? prev.filter((id) => id !== member.$id)
+                            : [...prev, member.$id]
+                        )
+                      }
+                      disabled={isSubmitting} 
+                    >
+                      {member.name}
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                !isLoadingMembers && <p className="text-sm text-muted-foreground">No members found in this workspace.</p>
+              )}
             </div>
 
             {/* AI Task Generator */}
@@ -264,6 +298,7 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                   id="ai_generate"
                   checked={aiTaskGen}
                   onCheckedChange={setAiTaskGen}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -274,6 +309,7 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                   className="border-none"
                   value={taskGenPrompt}
                   onChange={(e) => setTaskGenPrompt(e.currentTarget.value)}
+                  disabled={isSubmitting} 
                 />
               )}
             </div>
@@ -286,13 +322,13 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
                 variant="outline"
                 size="lg"
                 onClick={onCancel}
-                disabled={isPending}
+                disabled={isSubmitting} 
                 className={cn(!onCancel && "invisible")}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="lg" disabled={isPending}>
-                Create Project
+              <Button type="submit" size="lg" disabled={isSubmitting}> {/* Use combined loading state */}
+                {isSubmitting ? "Creating..." : "Create Project"}
               </Button>
             </div>
           </form>

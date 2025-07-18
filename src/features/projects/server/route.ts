@@ -7,6 +7,24 @@ import { DATABASE_ID, PROJECTS_ID, IMAGES_BUCKET_ID, TASKS_ID } from "@/config";
 import { ID, Query } from 'node-appwrite';
 import { createProjectSchema } from "../schemas";
 import { Project } from "../types";
+import { MEMBERS_ID } from "@/config";
+import { Databases } from "node-appwrite";
+
+async function addProjectToMembers(databases: Databases, projectId: string, memberIds: string[] = []) {
+  for (const memberId of memberIds) {
+    try {
+      const member = await databases.getDocument(DATABASE_ID, MEMBERS_ID, memberId);
+      const currentProjects = member.projectIds || [];
+      const updatedProjects = [...new Set([...currentProjects, projectId])];
+
+      await databases.updateDocument(DATABASE_ID, MEMBERS_ID, memberId, {
+        projectIds: updatedProjects,
+      });
+    } catch (error) {
+      console.error(`Failed to update member ${memberId}`, error);
+    }
+  }
+}
 
 
 const app = new Hono()
@@ -107,6 +125,8 @@ const app = new Hono()
 
             );
 
+            await addProjectToMembers(databases, project.$id, members);
+
             return c.json({ data: project });
         }
 )
@@ -172,7 +192,8 @@ const app = new Hono()
     return c.json({  data: project  });
   }
 )
-.delete("/:projectId", sessionMiddleware, async (c) => {
+.delete(
+  "/:projectId", sessionMiddleware, async (c) => {
   const databases = c.get("databases");
   const user = c.get("user");
   const { projectId } = c.req.param();

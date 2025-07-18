@@ -9,5 +9,10 @@ export type Member = Models.Document & {
   name: string;
   email: string;
   role: "ADMIN" | "MEMBER"; // required
-  speciality: string;        // required
+  speciality: string; 
+  projectIds: string[];
+  $id: string; 
+  userid: string;
+  workspaceId: string;
+  
 };
