@@ -22,11 +22,14 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { useLogin } from "@/features/auth/api/use-login"; // Adjust the import path as necessary
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useState } from "react";
 
 
 
 const SignInCard = () => {
   const { mutate } = useLogin(); // Assuming useLogin is defined in your auth client API
+  const [showPassword, setShowPassword] = useState(false);
 
     const form = useForm<z.infer<typeof loginSchema>>({
         resolver: zodResolver(loginSchema),
@@ -77,26 +80,34 @@ const SignInCard = () => {
             />
 
             <FormField 
-            name="password"
-            control={form.control}
-            rules={{ required: "Password is required" }}
-            render={({ field }) => (
+              name="password"
+              control={form.control}
+              rules={{ required: "Password is required" }}
+              render={({ field }) => (
                 <FormItem>
+                  <div className="relative">
                     <FormControl>
-                        <Input 
+                      <Input 
                         {...field}
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         min={8}
                         placeholder="Enter Password"
                         max={256}
-
-                />
+                      />
                     </FormControl>
-                    <FormMessage />
-                
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                    </button>
+                  </div>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
+
            
 
             

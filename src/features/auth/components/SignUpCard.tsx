@@ -25,12 +25,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema } from "@/features/auth/schemas"; // Adjust the import path as necessary
 import { useSignUp } from "../api/use-signup";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useState } from "react";
+
 
 
 
 
 const SignUpCard = () => {
   const { mutate } = useSignUp();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
     const form = useForm<z.infer<typeof signupSchema>>({
         resolver: zodResolver(signupSchema),
@@ -38,6 +44,7 @@ const SignUpCard = () => {
         name: "",
         email: "",
         password: "",
+        confirmPassword: "", 
         },
     });
 
@@ -48,6 +55,7 @@ const SignUpCard = () => {
           json: values
         });
     }
+
   return (
     <Card className="w-full h-full md:w-[487px] border-none shadow-none ">
       <CardHeader className="flex items-center justify-center text-center p-7">
@@ -112,26 +120,62 @@ const SignUpCard = () => {
             />
 
             <FormField 
-            name="password"
-            control={form.control}
-            rules={{ required: "Password is required" }}
-            render={({ field }) => (
+              name="password"
+              control={form.control}
+              rules={{ required: "Password is required" }}
+              render={({ field }) => (
                 <FormItem>
+                  <div className="relative">
                     <FormControl>
-                        <Input 
+                      <Input 
                         {...field}
-                        type="password"
-                        min={8}
+                        type={showPassword ? "text" : "password"}
                         placeholder="Enter a Password"
+                        min={8}
                         max={256}
-                                
-                />
+                      />
                     </FormControl>
-                    <FormMessage />
-                
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                    </button>
+                  </div>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
+
+            <FormField 
+                name="confirmPassword"
+                control={form.control}
+                rules={{ required: "Please confirm your password" }}
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="relative">
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm your Password"
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                      >
+                        {showConfirmPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                      </button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+
             <Button disabled={false} size="lg" className="w-full">Register</Button> 
         </form>
         </Form>
