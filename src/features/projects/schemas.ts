@@ -21,6 +21,5 @@ export const updateProjectSchema = z.object({
         z.instanceof(File),
         z.string().transform((value) => value === "" ? undefined : value),
     ]).optional(),
-    members: z.array(z.string()).optional(),
 
 });

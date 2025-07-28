@@ -1,3 +1,4 @@
+
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/features/auth/queries";
@@ -15,7 +16,7 @@ interface ProjectIdPageProps {
 const ProjectIdPage = async ({
     params,
 }: ProjectIdPageProps) => {
-    const user = getCurrentUser();
+    const user = await getCurrentUser();
     if (!user) {
         redirect("/sign-in");
     }
@@ -34,7 +35,7 @@ const ProjectIdPage = async ({
             <div className="flex items-center gap-x-2">
                 <ProjectAvatar 
                 name={initialValues.name}
-                image={initialValues.image}
+                image={initialValues.imageUrl}
                 className="size-8"
                 />
                 <p className="text-lg font-semibold">{initialValues.name}</p>
@@ -52,7 +53,7 @@ const ProjectIdPage = async ({
                 </Button>
             </div>
         </div>
-        <TaskViewSwitcher hideProjectFilter projectId={initialValues.$id} />
+        <TaskViewSwitcher hideProjectFilter  projectId={initialValues.$id}/>
     </div>
   )
 }

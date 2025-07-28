@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { InferRequestType, InferResponseType } from "hono";
-import { client } from "@/lib/rpc"; // ✅ this import is essential
+import { client } from "@/lib/rpc";
 import { useQueryClient } from "@tanstack/react-query";	
 import { useRouter } from "next/navigation";
 
@@ -31,9 +31,10 @@ export const useUpdateWorkspace = () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["workspace", data.$id]})
     },
-    onError: () => {
-      toast.error(`Error updating workspace`);
-    },
+    onError: (error) => {
+    console.error("Mutation error", error);
+    toast.error(`Error updating workspace: ${error.message}`);
+  }
   });
 
   return mutation;

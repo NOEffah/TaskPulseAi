@@ -103,7 +103,7 @@ export const EditWorkspaceForm = ({ onCancel, initialValues }: EditWorkspaceForm
     const onSubmit = (values: z.infer<typeof updateWorkspaceSchema>) => {
         const finalValues = {
             ...values,
-            image: values.image instanceof File ? values.image : "",
+            image: values.image instanceof File || typeof values.image === "string" ? values.image : "",
         }
         mutate({
             form: finalValues,

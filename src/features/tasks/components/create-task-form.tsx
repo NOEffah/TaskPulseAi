@@ -114,7 +114,6 @@ const handlePredictDeadline = () => {
                   </FormItem>
                 )}
               />
-
               <Controller
               control={form.control}
               name="dueDate"
@@ -140,9 +139,6 @@ const handlePredictDeadline = () => {
                 </FormItem>
                 )}
               />
-
-
-
               <FormField
                 control={form.control}
                 name="assigneeId"

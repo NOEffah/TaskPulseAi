@@ -29,29 +29,29 @@ interface TaskViewSwitcherProps {
 }
 
 export const TaskViewSwitcher = ({
-  hideProjectFilter
+  hideProjectFilter,
+  projectId
 }: TaskViewSwitcherProps) => {
-  const [{
-          status,
-          priority,
-          assigneeId,
-          projectId,
-          dueDate,
-      } ] = useTaskFilters();
+  
 
   const[ view, setView ] = useQueryState("task-view", {
     defaultValue: "table",
   })
-  const workspaceId = useWorkspaceId();
+  
   const { mutate: bulkUpdate } = useBulkUpdateTask();
   const [, setFilters] = useTaskFilters();
+  const workspaceId = useWorkspaceId();
+
+  const { projectId: projectIdFromFilters, assigneeId, status, priority, dueDate } = useTaskFilters()[0];
+
+  const effectiveProjectId = projectId ?? projectIdFromFilters;
 
   const { 
     data: tasks,
      isLoading: isLoadingTasks } 
      = useGetTasks({ 
       workspaceId,
-      projectId,
+      projectId: effectiveProjectId,
       assigneeId,
       status, 
       priority,
@@ -73,7 +73,7 @@ export const TaskViewSwitcher = ({
   if (hideProjectFilter && projectId) {
     setFilters({ projectId });
   }
-}, [hideProjectFilter, projectId, setFilters]);
+}, [hideProjectFilter, projectId]);
 
   
   
@@ -119,7 +119,9 @@ export const TaskViewSwitcher = ({
         </Button>        
       </div>
       <Separator className="my-4" />
+
         <DataFilters hideProjectFilter={hideProjectFilter}/>
+
         <Separator className="my-4" />
         {isLoadingTasks ? (
           <div className="w-full border rounded-lg h-[200px] p-4 flex flex-cols items-center justify-center">
