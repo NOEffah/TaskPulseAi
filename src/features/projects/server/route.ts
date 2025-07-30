@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { validator } from "hono/validator";
 import { querySchema, updateProjectSchema } from "../schemas";
 import { getMember } from "@/features/members/utils";
-import { DATABASE_ID, PROJECTS_ID, IMAGES_BUCKET_ID, TASKS_ID } from "@/config";
+import { DATABASE_ID, PROJECTS_ID, IMAGES_BUCKET_ID } from "@/config";
 import { ID, Query } from 'node-appwrite';
 import { createProjectSchema } from "../schemas";
 import { Project } from "../types";
@@ -80,7 +80,7 @@ const app = new Hono()
 
     const project = await databases.getDocument<Project>(
       DATABASE_ID,
-      TASKS_ID,
+      PROJECTS_ID,
       projectId
     );
 
@@ -244,14 +244,14 @@ const app = new Hono()
   // ✅ Step 1: Delete related tasks (only real relationship)
   const tasks = await databases.listDocuments(
     DATABASE_ID,
-    TASKS_ID,
+    PROJECTS_ID,
     [Query.equal("projectId", projectId)]
   );
 
   if (tasks.documents.length) {
     await Promise.all(
       tasks.documents.map((task) =>
-        databases.deleteDocument(DATABASE_ID, TASKS_ID, task.$id)
+        databases.deleteDocument(DATABASE_ID, PROJECTS_ID, task.$id)
       )
     );
   }
