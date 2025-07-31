@@ -63,6 +63,55 @@ const app = new Hono()
         return c.json({ data: workspace });
 
       })
+       .get("/", sessionMiddleware, async (c) => {
+        const user = c.get("user");
+        const databases = c.get("databases");
+
+        const members = await databases.listDocuments(
+            DATABASE_ID,
+            MEMBERS_ID,
+            [
+                Query.equal("userid", user.$id)
+            ]
+        )
+
+        if (members.total === 0) {
+            return c.json({ data: { documents: [], total: 0 } })
+        }
+
+        const workspaceIds = members.documents.map((member) => member.workspaceid)
+
+        const workspaces = await databases.listDocuments(
+            DATABASE_ID,
+            WORKSPACES_ID,
+            [
+                Query.orderDesc("$createdAt"),
+                Query.equal("$id", workspaceIds)
+            ],
+        )
+        return c.json({ data: workspaces })
+    })
+    .get("/:workspaceId/info", 
+      sessionMiddleware, 
+      async (c) => {
+        const user = c.get("user");
+        const databases = c.get("databases");
+        const { workspaceId } = c.req.param();
+        
+        
+        const workspace = await databases.getDocument<Workspace>(
+            DATABASE_ID,
+            WORKSPACES_ID,
+            workspaceId,
+        );
+        return c.json({ 
+          data: { 
+          $id: workspace.$id, 
+          name: workspace.name,
+           imageUrl: workspace.imageUrl 
+          } });
+
+      })
     .post(
         "/",
         validator("form", (value, c) => {

@@ -26,7 +26,11 @@ export const TaskDescription = ({ task }: TaskDescriptionProps) => {
                 dueDate: new Date(task.dueDate), 
             },
             param: { taskId: task.$id }
-        });
+        },{
+            onSuccess: () => {
+                setIsEditing(false); 
+        }
+      });
     };
 
     return (
