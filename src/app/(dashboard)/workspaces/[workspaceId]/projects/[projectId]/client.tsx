@@ -10,6 +10,7 @@ import { useGetProject } from "@/features/projects/api/use-get-project";
 import { PageLoader } from "@/components/ui/page-loader";
 import { PageError } from "@/components/ui/page-error";
 import { useGetProjectAnalytics } from "@/features/projects/api/use-get-project-analytics";
+import { Analytics } from "@/components/analytics";
 
 export const ProjectIdClient = () => {   
     const projectId = useProjectId(); 
@@ -49,6 +50,10 @@ export const ProjectIdClient = () => {
                 </Button>
             </div>
         </div>
+        {analytics ?(
+        <Analytics data={analytics} />
+        ): null
+        }
         <TaskViewSwitcher hideProjectFilter/>
     </div>
     )
