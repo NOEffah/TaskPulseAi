@@ -2,10 +2,20 @@ export const generateTasksWithGemini = async (
   userPrompt: string,
   members: { name: string; speciality: string }[]
 ) => {
+  // 🔧 1. Generate today's date in ISO format
+  const startDate = new Date().toISOString().split("T")[0]; // e.g., "2025-07-31"
+
+  // 🔧 2. Add the start date instruction in the system prompt
   const systemPrompt = `
+
 You are an AI task planner. Given a project description and a list of team members with their specialities, generate a list of tasks. Assign each task to the most suitable member based on their speciality.
 
+Today's date is ${startDate}. Use this as the project start date. Estimate realistic due dates for each task based on task complexity and urgency.
+
+For each task, also assign a priority level: "low", "medium", "high", or "urgent", based on the urgency and importance of the task as implied by the project description. Use your reasoning to determine the appropriate level — do not default to a single value.
+
 Return the result as a JSON array like this:
+
 [
   {
     "name": "Design homepage",
@@ -19,6 +29,7 @@ Return the result as a JSON array like this:
 ]
 
 Only include names from the given member list. Respond ONLY with the JSON array.
+
 `;
 
   const memberList = members
