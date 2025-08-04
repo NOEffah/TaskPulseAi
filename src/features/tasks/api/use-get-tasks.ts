@@ -10,6 +10,7 @@ interface UseGetTasksProps {
     priority?: string | null;
     dueDate?: string | null;
     search?: string | null;
+
 }
 
 export const useGetTasks = ({
@@ -20,6 +21,7 @@ export const useGetTasks = ({
     priority,
     dueDate,
     search,
+   
 }: UseGetTasksProps) => {
     const query = useQuery({
         queryKey: [
@@ -31,6 +33,7 @@ export const useGetTasks = ({
             priority,
             dueDate,
             search,
+ 
         ],
         queryFn: async () => {
             const response = await client.api.tasks.$get({

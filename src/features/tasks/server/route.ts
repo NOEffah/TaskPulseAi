@@ -66,7 +66,8 @@ const app = new Hono()
         search,
         dueDate,
         priority,
-        assigneeId
+        assigneeId,
+   
         } = c.req.valid('query');
     
         const member = await getMember({
@@ -102,6 +103,7 @@ const app = new Hono()
         if (assigneeId) {
             query.push(Query.equal('assigneeId', assigneeId));
         }
+    
 
         const tasks = await databases.listDocuments<Task>(
             DATABASE_ID,

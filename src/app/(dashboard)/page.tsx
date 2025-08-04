@@ -1,4 +1,4 @@
-
+export const dynamic = 'force-dynamic';
 
 import { getCurrentUser } from "@/features/auth/queries";
 import { getWorkspaces } from "@/features/workspaces/queries";

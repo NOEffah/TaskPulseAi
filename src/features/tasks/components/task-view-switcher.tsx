@@ -17,7 +17,7 @@ import { useTaskFilters } from "../hooks/use-task-filters"
 import { DataTable } from "./data-table"
 import { columns } from "./columns"; 
 import { DataKanban } from "./data-kanban"
-import { useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { TaskStatus } from "../types"
 import { useBulkUpdateTask } from "../api/use-bulk-update-tasks"
 import { DataCalendar } from "./data-calendar"
@@ -69,11 +69,14 @@ export const TaskViewSwitcher = ({
 
   }, [bulkUpdate]);
 
+  const initialFilterSet = useRef(false);
+
   useEffect(() => {
-  if (hideProjectFilter && projectId) {
+  if (hideProjectFilter && projectId && !initialFilterSet.current) {
     setFilters({ projectId });
+    initialFilterSet.current = true;
   }
-}, [hideProjectFilter, projectId]);
+}, [hideProjectFilter, projectId,setFilters]);
 
   
   

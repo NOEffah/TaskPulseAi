@@ -1,4 +1,4 @@
-
+export const dynamic = 'force-dynamic';
 import SignUpCard from "@/features/auth/components/SignUpCard";
 
 import { getCurrentUser } from "@/features/auth/queries";

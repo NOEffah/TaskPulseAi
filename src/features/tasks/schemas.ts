@@ -20,7 +20,7 @@ export const getTasksQuerySchema = z.object({
   status: z.nativeEnum(TaskStatus).nullish(),
   search: z.string().nullish(),
   dueDate: z.string().nullish(),
-  priority: z.nativeEnum(TaskPriority).nullish(),
+  priority: z.nativeEnum(TaskPriority).nullish(), 
 });
 
 export const updateTasksSchema = z.object({

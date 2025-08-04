@@ -19,6 +19,8 @@ import Link from "next/link";
 import { Card, CardContent,} from "@/components/ui/card";
 import { Project } from "@/features/projects/types";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
+import { Member } from "@/features/members/types";
+import { MemberAvartar } from "@/features/members/components/member-avartar";
 
 
 
@@ -52,6 +54,7 @@ export const WorkspaceIdClient = () => {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                <TaskList  data={tasks.documents} total={tasks.total}/>
                <ProjectList data={projects.documents} total={projects.total} />
+               <MemberList data={members.documents} total={members.total} />
             </div>
     
         </div>
@@ -66,6 +69,8 @@ interface   TaskListProps {
 
 export const TaskList = ({ data, total }: TaskListProps) => {
    const workspaceId = useWorkspaceId();
+
+   const limitedTasks = data.slice(0, 3);
    
     const { open: createTask } = useCreateTaskModal();
     return(
@@ -81,9 +86,9 @@ export const TaskList = ({ data, total }: TaskListProps) => {
             </div>
             <Separator className="my-4" />
             <ul className="flex flex-col gap-y-4">
-                {data.map((task) => (
+                {limitedTasks.map((task) => (
                     <li key={task.$id}>
-                     <link href={`/workspaces/${workspaceId}/tasks/${task.$id}`}>
+                     <Link href={`/workspaces/${workspaceId}/tasks/${task.$id}`}>
                         <Card className="shadow-none rounded-lg hover:opacity-75 transition">
                            <CardContent className="p-4">
                             <p className="text-lg font-medium truncate">{task.name}</p>
@@ -106,7 +111,7 @@ export const TaskList = ({ data, total }: TaskListProps) => {
 
                         </Card>
 
-                     </link>
+                     </Link>
                     </li>
                 ))}
                          
@@ -152,7 +157,7 @@ export const ProjectList = ({ data, total }: ProjectListProps) => {
             <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {data.map((project) => (
                     <li key={project.$id}>
-                     <link href={`/workspaces/${workspaceId}/tasks/${project.$id}`}>
+                     <Link href={`/workspaces/${workspaceId}/projects/${project.$id}`}>
                         <Card className="shadow-none rounded-lg hover:opacity-75 transition">
                            <CardContent className="p-4 flex items-center gap-x-2.5">
                             <ProjectAvatar
@@ -160,29 +165,21 @@ export const ProjectList = ({ data, total }: ProjectListProps) => {
                              fallbackClassName="text-lg"
                              name={project.name}
                              image={project.imageUrl}
-                            
-                            
                             />
-                            <p className="text-lg font-medium tunrcate">
+                            <p className="text-lg font-medium truncate">
                                 {project.name}
                             </p>
-
-                            
                             </CardContent>
-
                         </Card>
-
-                     </link>
+                     </Link>
                     </li>
                 ))}
                          
                 <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
-                    No tasks found
+                    No projects found
                 </li>
              </ul>
           
-
-
         </div>
         </div>
     )
@@ -193,53 +190,49 @@ interface   MembersListProps {
         total: number;
     }
 
-export const MemberList = ({ data, total }: ProjectListProps) => {
+export const MemberList = ({ data, total }: MembersListProps) => {
    const workspaceId = useWorkspaceId();
-       
-    const { open: createProject } = useCreateProjectModal();
-   
-    
+          
     return(
         <div className="flex flex-col gap-y-4 col-span-1">
           <div className="bg-white border rounded-lg p-4">
             <div className="flex items-center justify-between">
              <p className="text-lg font-semibold">
-                  Projects ({total})      
+                  Members ({total})      
             </p>
-            <Button variant="secondary" size="icon" onClick={createProject}>
-                <PlusIcon className="size-4 text-neutral-400" />
+            <Button asChild variant="secondary" size="icon">
+                <Link href={`/workspaces/${workspaceId}/members`}>
+                <SettingsIcon className="size-4 text-neutral-400" />
+                </Link>
             </Button>
             </div>
             <Separator className="my-4" />
-            <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {data.map((project) => (
-                    <li key={project.$id}>
-                     <link href={`/workspaces/${workspaceId}/tasks/${project.$id}`}>
-                        <Card className="shadow-none rounded-lg hover:opacity-75 transition">
-                           <CardContent className="p-4 flex items-center gap-x-2.5">
-                            <ProjectAvatar
+            <ul className="grid grid-cols-1 sm:grid-cols lg:grid-cols-3 gap-4">
+                {data.map((member) => (
+                    <li key={member.$id}>
+                        <Card className="shadow-none rounded-lg overflow-hidden">
+                           <CardContent className="p-3 flex flex-col items-center gap-x-2">
+                            <MemberAvartar
                              className="size-12"
                              fallbackClassName="text-lg"
-                             name={project.name}
-                             image={project.imageUrl}
-                            
-                            
+                             name={member.name}
                             />
-                            <p className="text-lg font-medium tunrcate">
-                                {project.name}
-                            </p>
-
+                            <div className="flex flex-col items-center overflow-hidden">
+                                <p className="text-lg font-medium line-clamp-1">
+                                    {member.name}
+                                </p>
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {member.email}
+                                </p>
+                            </div>
                             
                             </CardContent>
-
                         </Card>
-
-                     </link>
                     </li>
                 ))}
                          
                 <li className="text-sm text-muted-foreground text-center hidden first-of-type:block">
-                    No tasks found
+                    No members found
                 </li>
              </ul>
           
