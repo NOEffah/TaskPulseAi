@@ -42,8 +42,7 @@ interface EditProjectFormProps {
 
 export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProps) =>{
     const router = useRouter();
-    const { mutate, isPending} = useUpdateProject();
-    const {
+const { mutateAsync, isPending } = useUpdateProject();    const {
         mutate: deleteProject,
         isPending: isDeleteProject,
     } = useDeleteProject();
@@ -63,6 +62,7 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
         defaultValues: {
             ...initialValues,
             image: initialValues.imageUrl ?? "",
+            status: initialValues.status ?? undefined,
         },
     });
 
@@ -81,19 +81,23 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
             },
         })
     }
+    
 
-    const onSubmit = (values: z.infer<typeof updateProjectSchema>) => {
+    const onSubmit = async (values: z.infer<typeof updateProjectSchema>) => {
+        console.log("Submitted values:", values);
         const finalValues = {
             ...values,
             image: values.image instanceof File ? values.image : "",
+            status: values.status ?? "ACTIVE",
         }
-        mutate({
+        await mutateAsync({
             form: finalValues,
             param: { projectId: initialValues.$id}
         },
             
         )
     };
+    
     
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -123,7 +127,9 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
 
         <CardContent className="p-7">
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit, errors=>{
+                 console.log("Validation failed:", errors);
+            })} className="space-y-4">
                 <div className='flex flex-col gap-y-4'>
                 <FormField  
                 control={form.control}
@@ -235,6 +241,7 @@ export const EditProjectForm = ({ onCancel, initialValues }: EditProjectFormProp
                 <Button
                     type="submit"
                     size="lg"
+                    onClick={() => console.log("Save Changes clicked")}
                     >
                     Save Changes
                 </Button>

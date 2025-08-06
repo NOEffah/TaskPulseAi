@@ -6,6 +6,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 import { usePathname } from "next/navigation";
+import { LayoutDashboard } from "lucide-react";
 const routes = [  
  
 {  
@@ -33,6 +34,12 @@ const routes = [
     icon: UsersIcon,
     activeIcon: UsersIcon,  
 } , 
+    {
+        label: "Analytics",
+        href: "/analytics",
+        icon: LayoutDashboard,
+        activeIcon: LayoutDashboard,
+    },
 ];  
 
 export const Navigation = () => {  

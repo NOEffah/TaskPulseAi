@@ -150,6 +150,7 @@ const app = new Hono()
                     imageUrl: uploadedImageUrl,
                     workspaceid: workspaceId,
                     members,
+                    status: "ACTIVE",
                 }
 
             );
@@ -230,7 +231,7 @@ const app = new Hono()
   const existingProject = await databases.getDocument<Project>(
     DATABASE_ID,
     PROJECTS_ID,
-    projectId
+    projectId,
   );
 
   const member = await getMember({
@@ -253,12 +254,12 @@ const app = new Hono()
   if (tasks.documents.length) {
     await Promise.all(
       tasks.documents.map((task) =>
-        databases.deleteDocument(DATABASE_ID, PROJECTS_ID, task.$id)
+        databases.deleteDocument(DATABASE_ID, TASKS_ID, task.$id)
       )
     );
   }
 
-  // ✅ Step 2: Delete the project
+
   await databases.deleteDocument(DATABASE_ID, PROJECTS_ID, projectId);
 
   return c.json({ data: { $id: projectId } });

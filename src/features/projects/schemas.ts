@@ -21,5 +21,6 @@ export const updateProjectSchema = z.object({
         z.instanceof(File),
         z.string().transform((value) => value === "" ? undefined : value),
     ]).optional(),
+    status: z.enum(["ACTIVE", "COMPLETED", "ARCHIVED"]).optional().nullable(),
 
 });

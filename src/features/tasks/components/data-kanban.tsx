@@ -1,3 +1,4 @@
+// src/components/DataKanban.tsx
 import React, { useCallback, useEffect, useState } from "react";
 import {
     DragDropContext,
@@ -8,13 +9,15 @@ import {
 import { KanbanColumnHeader } from "./kanban-column-header";
 import { KanbanCard } from "./kanban-card";
 import { Task, TaskStatus, } from "../types";
+// Import the new hook
+import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks"; 
 
 const boards: TaskStatus[] = [
     TaskStatus.BACKLOG,
     TaskStatus.TODO,
     TaskStatus.IN_PROGRESS,
     TaskStatus.IN_REVIEW,
-    TaskStatus.DONE
+    TaskStatus.DONE,
 ]
 
 type TaskState = {
@@ -23,13 +26,9 @@ type TaskState = {
 
 interface DataKanbanProps {
     data: Task[];
-    onChange: (tasks: { $id: string; status: TaskStatus; position: number}[]) => void;
 }
 
-export const DataKanban = ({
-    data,
-    onChange,
-}: DataKanbanProps) => {
+export const DataKanban = ({ data }: DataKanbanProps) => {
     const [tasks, setTasks ] = useState<TaskState>(() => {
         const initialTasks: TaskState = {
             [TaskStatus.BACKLOG]: [],
@@ -50,6 +49,10 @@ export const DataKanban = ({
         return initialTasks;
     })
 
+    // Use the new bulk update hook
+    const bulkUpdateTasks = useBulkUpdateTasks();
+
+    // Use a separate effect to sync external data prop with internal state
     useEffect(() => {
         const newTasks: TaskState = {
             [TaskStatus.BACKLOG]: [],
@@ -59,7 +62,7 @@ export const DataKanban = ({
             [TaskStatus.DONE]: [],
         };
 
-         data.forEach((task) => {
+        data.forEach((task) => {
             newTasks[task.status].push(task);
         })
 
@@ -68,11 +71,10 @@ export const DataKanban = ({
         });
 
         setTasks(newTasks)
-        
-    }, [data])
+    }, [data]);
 
     const onDragEnd = useCallback((result: DropResult) => {
-        if(!result.destination) return;
+        if (!result.destination) return;
 
         const {source, destination} = result;
         const sourceStatus = source.droppableId as TaskStatus;
@@ -108,47 +110,47 @@ export const DataKanban = ({
             // prepare minimal update payloads
             updatesPayload = [];
 
-            // always update the moved task
+            // update moved task's position and status
             updatesPayload.push({
                 $id: updatedMovedTask.$id,
                 status: destStatus,
-                position: Math.min((destination.index + 1) * 1000, 1_000_000)
+                position: destination.index, // Use index for simplicity here
             });
 
             // update positions for affected tasks in the destination column
             newTasks[destStatus].forEach((task, index) => {
-                if (task && task.$id !== updatedMovedTask.$id) {
-                    const newPosition = Math.min((index + 1) * 1000, 1_000_000);
-                    if (task.position !== newPosition) {
-                        updatesPayload.push({
-                            $id: task.$id,
-                            status: destStatus,
-                            position: newPosition,
-                        });
-                    }
+                // If it's a new task or its position has changed
+                if (task.$id !== updatedMovedTask.$id || task.position !== index) {
+                    updatesPayload.push({
+                        $id: task.$id,
+                        status: destStatus,
+                        position: index,
+                    });
                 }
             });
 
-            if ( sourceStatus !== destStatus){
+            // update positions for tasks in the source column if it's a different column
+            if (sourceStatus !== destStatus) {
                 newTasks[sourceStatus].forEach((task, index) => {
-                    if (task){
-                        const newPosition = Math.min((index + 1) * 1000, 1_000_000);
-                        if(task.position !== newPosition){
-                            updatesPayload.push({
-                                $id: task.$id,
-                                status: sourceStatus,
-                                position: newPosition,
-                            })
-                        }
+                    if (task && task.position !== index) {
+                        updatesPayload.push({
+                            $id: task.$id,
+                            status: sourceStatus,
+                            position: index,
+                        });
                     }
-                })
+                });
             }
+            
             return newTasks;
         });
 
-        onChange(updatesPayload);
-    }, [onChange])
-
+        // Use the new mutation hook to send the updates to the server
+        if (updatesPayload.length > 0) {
+            bulkUpdateTasks.mutate({ json: { tasks: updatesPayload } });
+        }
+    }, [bulkUpdateTasks]);
+    
     return (
         <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex overflow-x-auto">
@@ -166,28 +168,27 @@ export const DataKanban = ({
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         className="min-h-[200px] py-1.5">
-                                            {tasks[board].map((task, index) =>(
-                                                <Draggable
-                                                key={task.$id}
-                                                draggableId={task.$id}
-                                                index={index}
-                                                >
-                                                    {(provided) => (
-                                                        <div
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}>
-                                                                <KanbanCard task={task} />
-                                                        </div>
-                                                    )}
+                                        {tasks[board].map((task, index) =>(
+                                            <Draggable
+                                            key={task.$id}
+                                            draggableId={task.$id}
+                                            index={index}
+                                            >
+                                                {(provided) => (
+                                                    <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}>
+                                                            <KanbanCard task={task} />
+                                                    </div>
+                                                )}
 
-                                                </Draggable>
+                                            </Draggable>
 
-                                            ))}
-                                            {provided.placeholder}
+                                        ))}
+                                        {provided.placeholder}
                                     </div>
                                 )}
-
                             </Droppable>
                         </div>
                     )

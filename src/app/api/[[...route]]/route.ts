@@ -7,6 +7,7 @@ import members from "@/features/members/server/route";
 import projects from "@/features/projects/server/route";
 import tasks from "@/features/tasks/server/route";
 import ai from "@/features/ai/server/route";
+import analytics from "@/features/analytics/server/route";
 
 const app = new Hono().basePath("/api");
 
@@ -18,6 +19,9 @@ route("/auth", auth)
 .route("/projects", projects)
 .route("/tasks", tasks)
 .route("/ai", ai)
+.route("/analytics", analytics)
+
+
 
 
 

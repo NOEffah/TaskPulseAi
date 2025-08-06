@@ -4,4 +4,5 @@ export type Project = Models.Document & {
     name: string;
     imageUrl: string;
     workspaceid: string;
+    status?: 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'; 
 }

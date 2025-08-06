@@ -15,7 +15,6 @@ export const Sidebar = () => {
         <WorkspaceSwitcher />
         <Separator />
         <Navigation />
-        
         <Projects  />
         </aside>  
     );
