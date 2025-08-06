@@ -292,30 +292,6 @@ const app = new Hono()
             workspaceId,
         }
     );
-    // Check if all tasks in the same project are DONE
-        if (projectId) {
-        const allProjectTasks = await databases.listDocuments<Task>(
-            DATABASE_ID,
-            TASKS_ID,
-            [Query.equal("projectId", projectId), Query.equal("workspaceId", workspaceId)]
-        );
-
-        const allDone = allProjectTasks.documents.every(t => t.status === "DONE");
-
-        if (allDone) {
-            await databases.updateDocument<Project>(
-            DATABASE_ID,
-            PROJECTS_ID,
-            projectId,
-            {
-                status: "COMPLETED",
-            }
-            );
-        }
-        }
-
-
-    
 
     return c.json({ data: task }, 201);
   }
@@ -390,19 +366,15 @@ const app = new Hono()
         const user = c.get("user");
         const { tasks } = await c.req.valid("json");
 
-        if (tasks.length === 0) {
-            return c.json({ data: [] });
-        }
-
         const taskToUpdate = await databases.listDocuments(
             DATABASE_ID,
             TASKS_ID,
-            [Query.contains("$id", tasks.map((t) => t.$id))]
+            [Query.contains("$id", tasks.map((tasks) => tasks.$id))]
         );
 
         const workspaceIds = new Set(taskToUpdate.documents.map(task => task.workspaceId));
         if (workspaceIds.size !== 1){
-            return c.json({ error: "All tasks must belong to the same workspace" }, 400);
+            return c.json({ error: "All tasks must belong to same worskshop "})
         }
 
         const workspaceId = workspaceIds.values().next().value;
@@ -411,10 +383,11 @@ const app = new Hono()
             databases,
             workspaceId,
             userId: user.$id,
-        });
+
+        })
 
         if(!member) {
-            return c.json({ error: "Unauthorized" }, 401);
+            return c.json({ error: "Unauthorized"}, 401)
         }
 
         const updatedTasks = await Promise.all(
@@ -425,36 +398,12 @@ const app = new Hono()
                     TASKS_ID,
                     $id,
                     { status, position }
-                );
+                )
             })
         );
-        
-        // NEW LOGIC: Check for project completion
-        const completedTask = tasks.find(t => t.status === "DONE");
-        if (completedTask && completedTask.projectId) {
-            const allProjectTasks = await databases.listDocuments<Task>(
-                DATABASE_ID,
-                TASKS_ID,
-                [Query.equal("projectId", completedTask.projectId)]
-            );
 
-            // A project is completed only if all of its tasks are in the "DONE" status
-            const allDone = allProjectTasks.documents.every(t => t.status === "DONE");
-            
-            if (allDone) {
-                await databases.updateDocument<Project>(
-                    DATABASE_ID,
-                    PROJECTS_ID,
-                    completedTask.projectId,
-                    {
-                        status: "COMPLETED",
-                    }
-                );
-            }
-        }
-        // END OF NEW LOGIC
+        return c.json({ data: updatedTasks })
 
-        return c.json({ data: updatedTasks });
     }
 )
 export default app;

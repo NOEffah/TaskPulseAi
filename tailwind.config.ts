@@ -68,7 +68,22 @@ const config: Config = {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
-			}
+			},
+			keyframes: {
+                'bounce-lg': {
+                    '0%, 100%': {
+                        transform: 'translateY(-50%)',
+                        animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+                    },
+                    '50%': {
+                        transform: 'none',
+                        animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+                    },
+                },
+            },
+            animation: {
+                'bounce-lg': 'bounce-lg 1s infinite',
+            },
 		}
 	},
 	plugins: [tailwindcssAnimate],
