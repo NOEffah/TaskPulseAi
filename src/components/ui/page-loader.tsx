@@ -1,9 +1,9 @@
-import { Loader } from "lucide-react";
+import LoadingDots from "./loadingdots";
 
 export const PageLoader = () => {
     return (
         <div className="flex items-center justify-center h-screen">
-            <Loader className="size-6 animate-spin tet-muted-foreground" />
+            <LoadingDots />
 
         </div>
     )

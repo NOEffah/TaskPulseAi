@@ -1,4 +1,5 @@
 // src/components/DataKanban.tsx
+
 import React, { useCallback, useEffect, useState } from "react";
 import {
     DragDropContext,
@@ -9,8 +10,7 @@ import {
 import { KanbanColumnHeader } from "./kanban-column-header";
 import { KanbanCard } from "./kanban-card";
 import { Task, TaskStatus, } from "../types";
-// Import the new hook
-import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks"; 
+// REMOVED: import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks"; 
 
 const boards: TaskStatus[] = [
     TaskStatus.BACKLOG,
@@ -24,11 +24,19 @@ type TaskState = {
     [key in TaskStatus]: Task[];
 }
 
+// CORRECTED: Add the onChange prop to the interface
 interface DataKanbanProps {
     data: Task[];
+    onChange: (tasks: {
+      $id: string;
+      status: TaskStatus;
+      position: number;
+      projectId: string | null;
+    }[]) => void;
 }
 
-export const DataKanban = ({ data }: DataKanbanProps) => {
+// CORRECTED: Destructure the onChange prop
+export const DataKanban = ({ data, onChange }: DataKanbanProps) => {
     const [tasks, setTasks ] = useState<TaskState>(() => {
         const initialTasks: TaskState = {
             [TaskStatus.BACKLOG]: [],
@@ -48,11 +56,9 @@ export const DataKanban = ({ data }: DataKanbanProps) => {
 
         return initialTasks;
     })
+    
+    // REMOVED: const bulkUpdateTasks = useBulkUpdateTasks();
 
-    // Use the new bulk update hook
-    const bulkUpdateTasks = useBulkUpdateTasks();
-
-    // Use a separate effect to sync external data prop with internal state
     useEffect(() => {
         const newTasks: TaskState = {
             [TaskStatus.BACKLOG]: [],
@@ -73,6 +79,7 @@ export const DataKanban = ({ data }: DataKanbanProps) => {
         setTasks(newTasks)
     }, [data]);
 
+    // CORRECTED: Add onChange to the dependency array
     const onDragEnd = useCallback((result: DropResult) => {
         if (!result.destination) return;
 
@@ -80,12 +87,11 @@ export const DataKanban = ({ data }: DataKanbanProps) => {
         const sourceStatus = source.droppableId as TaskStatus;
         const destStatus = destination.droppableId as TaskStatus;
 
-        let updatesPayload: { $id: string; status: TaskStatus; position: number;}[] = [];
+        let updatesPayload: { $id: string; status: TaskStatus; position: number; projectId: string | null;}[] = [];
 
         setTasks((prevTasks) => {
             const newTasks = { ...prevTasks };
 
-            // Safely remove task from the source column
             const sourceColumn = [...newTasks[sourceStatus]];
             const [movedTask] = sourceColumn.splice(source.index, 1);
 
@@ -99,44 +105,44 @@ export const DataKanban = ({ data }: DataKanbanProps) => {
                     ? { ...movedTask, status: destStatus }
                     : movedTask;
 
-            // update the source column
             newTasks[sourceStatus] = sourceColumn;
 
-            // Add the task to the destination
             const destColumn = [...newTasks[destStatus]];
             destColumn.splice(destination.index, 0, updatedMovedTask);
             newTasks[destStatus] = destColumn;
 
-            // prepare minimal update payloads
             updatesPayload = [];
-
-            // update moved task's position and status
+            
             updatesPayload.push({
                 $id: updatedMovedTask.$id,
                 status: destStatus,
-                position: destination.index, // Use index for simplicity here
+                position: destination.index, 
+                projectId: updatedMovedTask.projectId,
             });
 
-            // update positions for affected tasks in the destination column
             newTasks[destStatus].forEach((task, index) => {
-                // If it's a new task or its position has changed
-                if (task.$id !== updatedMovedTask.$id || task.position !== index) {
-                    updatesPayload.push({
-                        $id: task.$id,
-                        status: destStatus,
-                        position: index,
-                    });
+                if (task && task.$id !== updatedMovedTask.$id) {
+                    const newPosition = index;
+                    if (task.position !== newPosition) {
+                        updatesPayload.push({
+                            $id: task.$id,
+                            status: destStatus,
+                            position: newPosition,
+                            projectId: task.projectId,
+                        });
+                    }
                 }
             });
 
-            // update positions for tasks in the source column if it's a different column
             if (sourceStatus !== destStatus) {
                 newTasks[sourceStatus].forEach((task, index) => {
                     if (task && task.position !== index) {
+                        const newPosition = index;
                         updatesPayload.push({
                             $id: task.$id,
                             status: sourceStatus,
-                            position: index,
+                            position: newPosition,
+                            projectId: task.projectId,
                         });
                     }
                 });
@@ -145,11 +151,11 @@ export const DataKanban = ({ data }: DataKanbanProps) => {
             return newTasks;
         });
 
-        // Use the new mutation hook to send the updates to the server
+        // CORRECTED: Call the onChange prop instead of the mutation hook
         if (updatesPayload.length > 0) {
-            bulkUpdateTasks.mutate({ json: { tasks: updatesPayload } });
+            onChange(updatesPayload);
         }
-    }, [bulkUpdateTasks]);
+    }, [onChange]);
     
     return (
         <DragDropContext onDragEnd={onDragEnd}>
@@ -182,9 +188,7 @@ export const DataKanban = ({ data }: DataKanbanProps) => {
                                                             <KanbanCard task={task} />
                                                     </div>
                                                 )}
-
                                             </Draggable>
-
                                         ))}
                                         {provided.placeholder}
                                     </div>

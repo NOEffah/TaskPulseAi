@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Member } from "@/features/members/types"; // Import the correct Member type
 // Removed the old generateTasksWithAI import, now using the hook:
 import { useGenerateTasksAI } from "@/features/ai/api/use-create-ai-generated-tasks";
+import FullscreenLoader from "@/components/ui/fullscreen-loader";
 
 interface CreateProjectFormProps {
   onCancel?: () => void;
@@ -149,6 +150,10 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
   const isSubmitting = isPending || isGeneratingTasks;
 
   return (
+    <>
+     {isSubmitting && <FullscreenLoader />}
+
+    
     <Card className="w-full h-full border-none shadow-none">
       <CardHeader className="flex p-7">
         <CardTitle className="text-xl font-bold">Create a new project</CardTitle>
@@ -335,5 +340,6 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
         </Form>
       </CardContent>
     </Card>
+    </>
   );
 };

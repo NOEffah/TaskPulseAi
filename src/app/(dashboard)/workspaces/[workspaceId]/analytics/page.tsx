@@ -1,4 +1,3 @@
-// src/app/(main)/workspaces/[workspaceId]/analytics/page.tsx
 "use client";
 
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
@@ -17,32 +16,33 @@ import { useGetWorkspaceAnalytics } from "@/features/analytics/api/use-get-analy
 
 export default function AnalyticsPage() {
     const workspaceId = useWorkspaceId();
-    const { data: analytics, isLoading, error } = useGetWorkspaceAnalytics({ workspaceId });
+    const { data: analytics, isLoading, error, isFetching } = useGetWorkspaceAnalytics({ workspaceId });
     const [aiInsight, setAiInsight] = useState("");
     const [isAiLoading, setIsAiLoading] = useState(false);
 
     const handleGetAiInsights = async () => {
         setIsAiLoading(true);
-        // This is still a mock, you'll need to replace it with your actual AI API call
-        // For example:
-        // const insight = await getAiInsights(workspaceId);
         await new Promise((res) => setTimeout(res, 1000));
         setAiInsight("Based on recent trends, project completion rates have increased by 15% in the last month.");
         setIsAiLoading(false);
     };
 
-
-    if (isLoading) {
+    // The key change is here:
+    // This will prevent the component from trying to render without a valid workspaceId.
+    // It will show a loading state until the ID is available,
+    // which in turn allows the useQuery hook to start fetching the data.
+    if (!workspaceId) {
         return <PageLoader />;
     }
 
-    // CORRECTED: This check is more specific and robust.
-    // It will catch cases where the data is undefined or an incomplete object.
+    if (isLoading || isFetching) {
+        return <PageLoader />;
+    }
+
     if (error || !analytics || !analytics.projects || !analytics.tasks || !analytics.members) {
         return <PageError message="Failed to load analytics data" />;
     }
 
-    // Destructuring now happens after all the checks, ensuring `analytics` is valid.
     const { members, projects, tasks } = analytics;
 
     const totalProjects = projects.total;
@@ -53,7 +53,6 @@ export default function AnalyticsPage() {
     const completedTasks = tasks.completed;
     const tasksProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-    // Prepare data for the BarChart
     const memberTaskData = members.map(member => ({
         name: member.name,
         completedTasks: member.completedTasks,
@@ -65,7 +64,6 @@ export default function AnalyticsPage() {
             <h1 className="text-3xl font-bold">Workspace Analytics</h1>
             <Separator />
             
-            {/* AI Insights Section */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-xl font-medium">AI Insights</CardTitle>
@@ -84,7 +82,6 @@ export default function AnalyticsPage() {
                 </CardContent>
             </Card>
 
-            {/* Overall Progress Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                     <CardHeader>
@@ -120,7 +117,6 @@ export default function AnalyticsPage() {
                 </Card>
             </div>
 
-            {/* Member and Project Insights Section */}
             <Card>
                 <CardHeader>
                     <CardTitle>Member Performance</CardTitle>

@@ -29,6 +29,7 @@ export const updateTasksSchema = z.object({
       $id: z.string(),
       status: z.nativeEnum(TaskStatus),
       position: z.number().int().positive().min(1000).max(100000),
+      projectId: z.string().optional().nullable(),
     })
   ),
 });
