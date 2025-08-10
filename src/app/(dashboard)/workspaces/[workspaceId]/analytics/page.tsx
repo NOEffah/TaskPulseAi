@@ -13,19 +13,45 @@ import { SparklesIcon } from "lucide-react";
 import { useState } from "react";
 import { useGetWorkspaceAnalytics } from "@/features/analytics/api/use-get-analytics-workspace";
 
+interface AiInsight {
+  title: string;
+  summary: string;
+  performanceMetrics: string;
+  futureProjections: string;
+}
+
 
 export default function AnalyticsPage() {
     const workspaceId = useWorkspaceId();
     const { data: analytics, isLoading, error, isFetching } = useGetWorkspaceAnalytics({ workspaceId });
-    const [aiInsight, setAiInsight] = useState("");
+const [aiInsight, setAiInsight] = useState<AiInsight | null>(null);
     const [isAiLoading, setIsAiLoading] = useState(false);
 
-    const handleGetAiInsights = async () => {
-        setIsAiLoading(true);
-        await new Promise((res) => setTimeout(res, 1000));
-        setAiInsight("Based on recent trends, project completion rates have increased by 15% in the last month.");
-        setIsAiLoading(false);
-    };
+      const handleGetAiInsights = async () => {
+    setIsAiLoading(true);
+
+    try {
+      const response = await fetch('/api/ai-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ workspaceId }), // Send workspaceId to the server
+      });
+
+      if (response.ok) {
+        const data = await response.json(); // data is already a JSON object
+      setAiInsight(data); // <-- Set the state directly with the object
+      } else {
+        throw new Error('Failed to generate AI insights');
+      }
+    } catch (error) {
+    console.error("Error generating AI insights:", error);
+    setAiInsight(null); // Set to null on error
+  } finally {
+    setIsAiLoading(false);
+  }
+  };
 
     // The key change is here:
     // This will prevent the component from trying to render without a valid workspaceId.
@@ -65,22 +91,42 @@ export default function AnalyticsPage() {
             <Separator />
             
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xl font-medium">AI Insights</CardTitle>
-                    <Button
-                        onClick={handleGetAiInsights}
-                        disabled={isAiLoading}
-                        variant="ghost"
-                        size="sm"
-                    >
-                        {isAiLoading ? "Generating..." : "Generate AI Insights"}
-                        <SparklesIcon className="ml-2 h-4 w-4" />
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">{aiInsight || "Click the button to get AI-powered insights on your projects."}</p>
-                </CardContent>
-            </Card>
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-xl font-medium">AI Insights</CardTitle>
+    <Button
+      onClick={handleGetAiInsights}
+      disabled={isAiLoading}
+      variant="ghost"
+      size="sm"
+    >
+      {isAiLoading ? "Generating..." : "Generate AI Insights"}
+      <SparklesIcon className="ml-2 h-4 w-4" />
+    </Button>
+  </CardHeader>
+  <CardContent>
+    {aiInsight ? (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">{aiInsight.title}</h3>
+        <p className="text-muted-foreground">{aiInsight.summary}</p>
+
+        <div className="bg-muted p-3 rounded-lg">
+          <h4 className="font-medium text-sm mb-1">Performance Metrics</h4>
+          <p>{aiInsight.performanceMetrics}</p>
+        </div>
+
+        <div className="bg-muted p-3 rounded-lg">
+          <h4 className="font-medium text-sm mb-1">Future Projections</h4>
+          <p>{aiInsight.futureProjections}</p>
+        </div>
+      </div>
+    ) : (
+      <p className="text-muted-foreground">
+        Click the button to get AI-powered insights on your projects.
+      </p>
+    )}
+  </CardContent>
+</Card>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>

@@ -80,15 +80,7 @@ export const EditTaskForm = ({ onCancel, projectOptions, memberOptions,initialVa
     );
   };
 
-  const handleSuggestOwner = () => {
-  const suggestion = memberOptions[0]?.id; // Replace with Gemini API call
-  form.setValue("assigneeId", suggestion);
-};
 
-const handlePredictPriority = () => {
-  const priority = TaskPriority.MEDIUM; // Replace with Gemini API call
-  form.setValue("priority", priority);
-};
 
 const handlePredictDeadline = () => {
   const predictedDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days later
@@ -156,16 +148,6 @@ const handlePredictDeadline = () => {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Owner</FormLabel>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSuggestOwner}
-                        className="text-xs flex items-center gap-1  bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:pointer-events-none"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        TaskPulse AI Suggest
-                      </Button>
                     </div>
                     <Select defaultValue={field.value} onValueChange={field.onChange}>
                       <FormControl>
@@ -234,16 +216,6 @@ const handlePredictDeadline = () => {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Priority</FormLabel>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handlePredictPriority}
-                          className="text-xs flex items-center gap-1 bg-orange-400 text-white hover:bg-orange-500 disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                          <Sparkles className="h-4 w-4" />
-                          TaskPulse AI Predict
-                        </Button>
                       </div>
                     <Select 
                     defaultValue={field.value} 

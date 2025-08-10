@@ -8,6 +8,8 @@ import projects from "@/features/projects/server/route";
 import tasks from "@/features/tasks/server/route";
 import ai from "@/features/ai/server/route";
 import analytics from "@/features/analytics/server/route";
+import aiInsights from "@/features/ai-insights/server/route";
+
 
 const app = new Hono().basePath("/api");
 
@@ -20,10 +22,7 @@ route("/auth", auth)
 .route("/tasks", tasks)
 .route("/ai", ai)
 .route("/analytics", analytics)
-
-
-
-
+.route("/ai-insights", aiInsights)
 
 export const GET = handle(app);
 export const POST = handle(app);

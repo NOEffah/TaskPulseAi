@@ -32,8 +32,8 @@ export const useLogin = () => {
         queryClient.invalidateQueries({ queryKey: ["current"] });
 
     },
-    onError: (error) => {
-      toast.error(`Error logging in: ${error.message}`);
+    onError: () => {
+      toast.error(`Invalid credentials.`);
     },
   });
 
