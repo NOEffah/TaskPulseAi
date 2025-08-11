@@ -82,22 +82,35 @@ export interface InsightsData {
 export const generateInsightsWithGemini = async (insightsData: InsightsData) => {
   const dataPrompt = JSON.stringify(insightsData, null, 2);
 
-  const systemPrompt = `
-You are an AI-powered analytics assistant for a project management tool. Your role is to analyze workspace data and generate a comprehensive, actionable insights report.
+  // Extract member names from insightsData to emphasize them
+  const memberNames = insightsData.members.map(m => m.name).join(", ");
 
-Analyze the provided JSON data, which includes key metrics on projects, tasks, and member performance. Provide a clear, insightful report with the following structure:
+
+  const systemPrompt = `
+You are an AI-powered analytics assistant for a project management tool.
+
+You will analyze the provided JSON data, which includes key metrics on projects, tasks, and member performance. 
+
+IMPORTANT:
+- Always use the EXACT member names as they appear in the JSON (names: ${memberNames}).
+-Always refer to members by their names exactly as provided in the JSON data.
+-Never summarize them collectively—always name them individually when discussing performance.
+- Never create generic labels like "Member 1", "Member A", or similar. 
+- Do not rename or shorten any member names.
+
+Provide a clear, insightful report with the following JSON structure:
 
 {
   "title": "AI-Powered Workspace Insights",
-  "summary": "Provide a high-level summary of the workspace's overall health and performance. Highlight key achievements or areas of concern.",
-  "performanceMetrics": "Based on the data, identify top-performing members (who completed the most tasks), and note any members with low task completion rates. Also, mention the overall project and task completion rates.",
-  "futureProjections": "Based on the current trends, provide an estimate for the time it will take to complete all remaining tasks. Offer suggestions for improvement, such as task prioritization or workload balancing among team members."
+  "summary": "High-level summary of the workspace's overall health and performance. Highlight key achievements or areas of concern.",
+  "performanceMetrics": "List each top-performing member by their exact name from the JSON (e.g., 'Kofi Mensah - completed all assigned tasks'). Also list members with moderate or low completion rates, again using exact names. Do not use generic terms like 'members' or 'team members'—always substitute the real name."
+  "futureProjections": "Based on current trends, estimate time to complete all remaining tasks and suggest improvements such as task prioritization or workload balancing."
 }
 
-Ensure your response is valid JSON and directly contains only the JSON object.
+Ensure your response is valid JSON and contains only the JSON object, nothing else.
   `;
 
-  const fullPrompt = `${systemPrompt.trim()}\n\n${dataPrompt}`;
+  const fullPrompt = `${systemPrompt.trim()}\n\nJSON Data:\n${dataPrompt}`;
 
   try {
     const response = await fetch(
@@ -107,36 +120,22 @@ Ensure your response is valid JSON and directly contains only the JSON object.
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: fullPrompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json", // ✅ Keep this
-          },
+          generationConfig: { responseMimeType: "application/json" },
         }),
       }
     );
 
     const data = await response.json();
 
-    // 1. Get the raw text from the API response
     let aiResponseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    // 2. Check if the text is wrapped in markdown, and if so, extract the content
     if (aiResponseText) {
       const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
       const match = aiResponseText.match(jsonRegex);
-
-      if (match && match[1]) {
-        aiResponseText = match[1].trim();
-      } else {
-        // If no markdown is found, use the text as is.
-        // This is a safety net in case the AI provides pure JSON.
-        aiResponseText = aiResponseText.trim();
-      }
+      aiResponseText = match && match[1] ? match[1].trim() : aiResponseText.trim();
     }
 
-    // 3. Return the cleaned-up string.
-    // The server route will then parse this string with JSON.parse().
     return aiResponseText;
-
   } catch (error) {
     console.error("Error calling Gemini API for insights:", error);
     return null;

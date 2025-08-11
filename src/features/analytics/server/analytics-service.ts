@@ -12,10 +12,10 @@ export const getWorkspaceAnalytics = async (databases: Databases, workspaceId: s
 const { users } = await createAdminClient();
 
   const projects = await databases.listDocuments<Project>(
-    DATABASE_ID,
-    PROJECTS_ID,
-    [Query.equal("workspaceid", workspaceId)]
-  );
+        DATABASE_ID,
+        PROJECTS_ID,
+        [Query.equal("workspaceid", workspaceId)]
+      );
 
   const membersResponse = await databases.listDocuments<Member>(
   DATABASE_ID,
@@ -49,7 +49,7 @@ const members = await Promise.all(
   ) : { documents: [], total: 0 };
 
   const totalProjects = projects.total;
-const completedProjects = projects.documents.filter(p => p.status === "COMPLETED").length;
+  const completedProjects = projects.documents.filter(p => p.status === "COMPLETED").length;
 
   const totalTasks = allTasks.total;
   const completedTasks = allTasks.documents.filter(t => t.status === TaskStatus.DONE).length;

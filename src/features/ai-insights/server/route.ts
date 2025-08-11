@@ -29,7 +29,7 @@ aiInsights.post(
   }),
   async (c) => {
     const { workspaceId } = c.req.valid("json");
-    const { databases } = await createAdminClient();
+    const { databases, users } = await createAdminClient();
 
     try {
       // 1. Fetch Projects
@@ -46,21 +46,59 @@ aiInsights.post(
         [Query.equal("workspaceId", workspaceId)]
       );
 
+      for (const project of projects.documents) {
+      const projectTasks = tasks.documents.filter(
+        (task) => task.projectId === project.$id
+      );
+
+      if (
+        projectTasks.length > 0 &&
+        projectTasks.every((task) => task.status === "DONE")
+      ) {
+        // Only update if not already COMPLETED
+        if (project.status !== "COMPLETED") {
+          await databases.updateDocument(
+            DATABASE_ID,
+            PROJECTS_ID,
+            project.$id,
+            { status: "COMPLETED" }
+          );
+          project.status = "COMPLETED"; // update in local object too
+        }
+      }
+    }
+
       // 3. Fetch Members and their task data
       const members = await databases.listDocuments<Member>(
         DATABASE_ID,
         MEMBERS_ID,
         [Query.equal("workspaceid", workspaceId)]
       );
-      const memberTaskData = members.documents.map((member) => ({
-        name: member.name,
-        completedTasks: tasks.documents.filter(
-          (task) => task.assigneeId === member.$id && task.status === "DONE"
-        ).length,
-        totalTasks: tasks.documents.filter(
-          (task) => task.assigneeId === member.$id
-        ).length,
-      }));
+
+      const memberTaskData = await Promise.all(
+        members.documents.map(async (member) => {
+          try {
+            const user = await users.get(member.userid); // get real profile
+            return {
+              name: user.name || "Unknown",
+              completedTasks: tasks.documents.filter(
+                (task) => task.assigneeId === member.$id && task.status === "DONE"
+              ).length,
+              totalTasks: tasks.documents.filter(
+                (task) => task.assigneeId === member.$id
+              ).length,
+            };
+          } catch (error) {
+            console.error(`Failed to fetch user ${member.userid}:`, error);
+            return {
+              name: "Unknown",
+              completedTasks: 0,
+              totalTasks: 0,
+            };
+          }
+        })
+      );
+
 
       // Assemble data for the AI
       const insightsData: InsightsData = {
@@ -77,6 +115,7 @@ aiInsights.post(
           ).length,
         },
         members: memberTaskData,
+        
       };
 
       // 4. Call the Gemini AI function
